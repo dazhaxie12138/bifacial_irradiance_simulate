@@ -34,3 +34,9 @@ sim_f = irs.cal_irr_front(n, N, D, A, h, beta, azimuth, Albedo, DNI, DHI, solar_
 sim_f = pd.Series(np.sum(sim_f, axis=0), index=mea_front.index)
 sim_r = irs.cal_irr_rear(n, N, D, A, h, beta, azimuth, Albedo, DNI, DHI, solar_altitude, solar_azimuth)
 sim_r = pd.Series(np.sum(sim_r, axis=0), index=mea_front.index)
+
+data = data = pd.DataFrame({'mea_front': mea_front,
+                            'sim_front': sim_f,
+                            'mea_rear': mea_rear,
+                            'sim_rear': sim_r})
+data.to_csv('data/Dm_fixed_simulated.csv')
