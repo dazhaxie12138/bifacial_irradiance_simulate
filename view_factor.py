@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 def cal_relative_parameter(D, A, h, beta):
-    """计算光伏阵列安装特性参数"""
+    """ Calculate PV array installation characteristic parameters """
     hu = h + 0.5 * A * np.sin(beta)
     hb = h - 0.5 * A * np.sin(beta)
     lf = hu * (D + A * np.cos(beta)) / (A * np.sin(beta)) - A * np.cos(beta)
@@ -23,15 +23,16 @@ def cal_relative_parameter(D, A, h, beta):
 
 def cal_F_gnd_sky(x, dx, D, A, h, beta, N):
     """
-    计算指定光伏阵列正面或背面视野内地面对天空的角系数
-    :param x: 一个np.arange(X1,X2,dx)形式的 其中X1为地面的起始位置，X2为地面的结束位置
-    :param dx: 微小长度地面段
-    :param D: 光伏阵列之间间距
-    :param A: 光伏阵列的高度
-    :param h: 光伏阵列的离地高度
-    :param beta: 光伏阵列与水平面的倾角
-    :param N: 光伏场的总行数
-    :return: 返回的是从X1~X2间每个dx对天空的角系数
+    Calculate the angle coefficient of the ground facing the sky within the field of view from the front or back of the specified photovoltaic array
+    
+    :param x: A form of np.arange(X1,X2,dx) where X1 is the starting position of the ground and X2 is the ending position of the ground
+    :param dx: Micro-length ground segment
+    :param D: row spacing
+    :param A: height of the PV array
+    :param h: height of the PV installation height
+    :param beta: tilt angle
+    :param N: Total number of rows of PV field
+    :return: The view factor of each dx to the sky from X1 to X2
     """
     hu, hb, lf, lr, le = cal_relative_parameter(D, A, h, beta)
     Ns = np.arange(1, N)[:, np.newaxis]
@@ -80,7 +81,7 @@ def cal_F_pv_front_dx_sky(n, N, D, A, h, beta, altitude):
     :param A:
     :param h:
     :param beta:
-    :return: 光伏阵列正面接收的漫射反射辐射占DHI的比例
+    :return: The proportion of diffuse reflected radiation received by the front of the photovoltaic array to DHI
     """
 
     hu, hb, lf, lr, le = cal_relative_parameter(D, A, h, beta)
@@ -140,7 +141,7 @@ def cal_F_pv_rear_dx_sky(n, N, D, A, h, beta, altitude):
     :param A:
     :param h:
     :param beta:
-    :return: 光伏阵列背面接收的漫射反射辐射占DHI的比例
+    :return: The proportion of diffuse reflected radiation received by the backside of the photovoltaic array to DHI
     """
 
     hu, hb, lf, lr, le = cal_relative_parameter(D, A, h, beta)
@@ -197,7 +198,7 @@ def cal_F_PV_nsgnd_front(n, N, D, A, h, beta, azimuth_PV, solar_azimuth, solar_a
     Sb = np.where(Sa > 0, hb * np.cos(solar_azimuth - azimuth_PV) / np.tan(solar_altitude),
                   A * np.cos(beta) + hu * np.cos(solar_azimuth - azimuth_PV) / np.tan(solar_altitude))
 
-    # 正面前部角系数
+    # front head VF
     lo = np.ceil((lf + Sb) / D) * D - (lf + Sb)
     l1 = np.minimum(lf + lo - np.abs(Sa), lf)
     lf = np.where(n == 1, float('inf'), lf)
@@ -215,7 +216,7 @@ def cal_F_PV_nsgnd_front(n, N, D, A, h, beta, azimuth_PV, solar_azimuth, solar_a
                                                     np.sqrt(hb ** 2 + (lf + lo - D) ** 2) -
                                                     np.sqrt(hu ** 2 + (l1 + A * np.cos(beta)) ** 2), 0)) / (2 * A)
 
-    # 正面后部角系数
+    # front tail VF
     lp = np.ceil((le + Sb) / D) * D - (le + Sb)
     l2 = np.minimum(le + lp - np.abs(Sa), le)
     F_pv_front_r_nsgnd = (np.where(le <= -((N - n) * D + np.abs(Sa) + Sb),
@@ -228,9 +229,9 @@ def cal_F_PV_nsgnd_front(n, N, D, A, h, beta, azimuth_PV, solar_azimuth, solar_a
                                            np.sqrt(hu ** 2 + (le + lp - np.abs(Sa) + A * np.cos(beta)) ** 2), 0)) /
                                            (2 * A))
 
-    # 正面中部角系数
+    # front middle VF
     M = np.minimum(np.floor((lf + Sb) / D), n - 1) - np.maximum(np.minimum(np.ceil((le + Sb) / D), n - 1), 0)
-    maxM = M.max()  # M[i] <= 50，安全
+    maxM = M.max()
     index_m = np.arange(1, maxM + 1)
     Sa_b = np.abs(Sa).values[:, None]
     l3_b = np.where(lf < (n - 1) * D - Sb, lf + lo - D, (n - 1) * D - Sb)[:, None]
@@ -238,7 +239,6 @@ def cal_F_PV_nsgnd_front(n, N, D, A, h, beta, azimuth_PV, solar_azimuth, solar_a
     mask = (index_m[None, :] <= M[:, None]) & valid[:, None]
 
     if isinstance(beta, np.ndarray):
-        # 各变量扩展维度 (N,1)，便于广播
         beta_bed = beta[:, None]
         hb_b = hb[:, None]
         hu_b = hu[:, None]
@@ -254,12 +254,12 @@ def cal_F_PV_nsgnd_front(n, N, D, A, h, beta, azimuth_PV, solar_azimuth, solar_a
     F_m[~mask] = 0
     F_pv_front_m_nsgnd = F_m.sum(axis=1)
 
-    # 光伏阵列对地面的角系数
+    # VF of the PV array to ground
     F_pv_front_gnd = np.where(n == 1, (1 - np.cos(beta)) / 2,
                               (A + np.sqrt(lf ** 2 + hb ** 2) -
                                np.sqrt((lf + A * np.cos(beta)) ** 2 + hu ** 2)) / (2 * A))
 
-    # 三个角系数相加
+    # VF of the PV array to the illuminated ground
     F_pv_front_nsgnd = np.where(np.logical_or(np.logical_and(Sa > 0, le >= (n - 1) * D - Sb),
                                               np.logical_and(Sa < 0, lf <= -((N - n) * D + np.abs(Sa) + Sb))),
                                 F_pv_front_gnd,
@@ -274,7 +274,7 @@ def cal_F_PV_nsgnd_rear(n, N, D, A, h, beta, azimuth_PV, solar_azimuth, solar_al
     Sb = np.where(Sa > 0, hb * np.cos(solar_azimuth - azimuth_PV) / np.tan(solar_altitude),
                   A * np.cos(beta) + hu * np.cos(solar_azimuth - azimuth_PV) / np.tan(solar_altitude))
 
-    # 反射辐射计算
+    # rear head VF
     lr = np.where(n == N, float('inf'), lr)
     lp = np.ceil((le + Sb) / D) * D - (le + Sb)
     l1 = np.minimum(le + lp - np.abs(Sa), le)
@@ -286,7 +286,7 @@ def cal_F_PV_nsgnd_rear(n, N, D, A, h, beta, azimuth_PV, solar_azimuth, solar_al
                                           np.sqrt(hu ** 2 + (l1 + A * np.cos(beta)) ** 2) -
                                           np.sqrt(hb ** 2 + l1 ** 2) -
                                           np.sqrt(hu ** 2 + (le + lp - D + A * np.cos(beta)) ** 2), 0)) / (2 * A)
-
+    # rear tail VF
     lq = lr - Sb - np.floor((lr - Sb) / D) * D
     l2 = np.maximum(lr - lq + np.abs(Sa), lr)
     F_pv_rear_r_nsgnd = np.where(lr >= (N - n) * D + np.abs(Sa) + Sb,
@@ -302,8 +302,7 @@ def cal_F_PV_nsgnd_rear(n, N, D, A, h, beta, azimuth_PV, solar_azimuth, solar_al
                                                    np.sqrt(hu ** 2 + (lr - lq + np.abs(Sa) - A * np.cos(beta)) ** 2) -
                                                    np.sqrt(hb ** 2 + (lr - lq + np.abs(Sa)) ** 2) -
                                                    np.sqrt(hu ** 2 + (l2 - A * np.cos(beta)) ** 2), 0)) / (2 * A)
-    #  计算中部直接反射辐射
-    # === 计算 K 值 ===
+    #  rear middle VF
     K = np.minimum(np.floor((le + Sb) / D), n - 1) + np.minimum(np.floor((lr - Sb) / D), N - n)
     maxK = K.max()
     index_k = np.arange(1, maxK + 1)
@@ -312,7 +311,6 @@ def cal_F_PV_nsgnd_rear(n, N, D, A, h, beta, azimuth_PV, solar_azimuth, solar_al
     valid = ((K >= 1) & (np.abs(Sa) < D)).values
     mask = (index_k[None, :] <= K[:, None]) & valid[:, None]  # shape (N, maxM)
 
-    # 各变量扩展维度 (N,1)，便于广播
     if isinstance(beta, np.ndarray):
         beta_b = beta[:, None]
         hb_b = hb[:, None]
@@ -330,14 +328,16 @@ def cal_F_PV_nsgnd_rear(n, N, D, A, h, beta, azimuth_PV, solar_azimuth, solar_al
     F_k[~mask] = 0
     F_pv_rear_m_nsgnd = F_k.sum(axis=1)
 
+    # VF of the PV array to ground
     F_pv_rear_gnd = np.where(n < N,
                              (A + np.sqrt(hb ** 2 + lr ** 2) -
                               np.sqrt(hu ** 2 + (lr - A * np.cos(beta)) ** 2)) / (2 * A),
                              (1 + np.cos(beta)) / 2)
-
+    # VF of the PV array to the illuminated ground
     F_pv_rear_nsgnd = np.where(np.logical_or(np.logical_and(Sa > 0, lr <= -((n - 1) * D - Sb)),
                                              np.logical_and(Sa < 0, le <= -(np.abs(Sa) + Sb + (N - n) * D))),
                                F_pv_rear_gnd,
                                F_pv_rear_f_nsgnd + F_pv_rear_m_nsgnd + F_pv_rear_r_nsgnd)
 
     return F_pv_rear_nsgnd
+
