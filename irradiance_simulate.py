@@ -1,7 +1,6 @@
 """
 from the article
-Detailed mathematical simulation model of incident irradiance
-on photovoltaic arrays considering finite number of rows and array locations
+A Detailed Two-Dimensional View-Factor Model for Incident Irradiance on Photovoltaic Arrays Considering the Impact of Finite Rows
 """
 
 import numpy as np
@@ -145,5 +144,6 @@ def cal_irr_rear(n, N, D, A, h, beta, azimuth, Albedo, DNI, DHI, solar_altitude,
     rear_ref = np.array(rear_ref_BEA + rear_ref_ISO)
 
     return rear_dir, rear_dif_BEA, rear_dif_ISO, rear_ref
+
 
 
