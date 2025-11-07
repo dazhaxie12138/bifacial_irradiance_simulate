@@ -34,7 +34,7 @@ def PerezDriesseContinuous(DNI, DHI, solar_altitude, start_date=None, end_date=N
 
     t = np.array([0.000, 0.000, 0.000, 0.061, 0.187, 0.333, 0.487, 0.643, 0.778, 0.839, 1.000, 1.000, 1.000])
 
-    # 样条系数
+    # spline coefficient
     coeffs_dict = {'F11': np.array([-0.053, -0.008, 0.131, 0.328, 0.557, 0.861,
                                     1.212, 1.099, 0.544, 0.544, 0.000, 0.000, 0.000]),
                    'F12': np.array([0.529, 0.588, 0.770, 0.471, 0.241, -0.323,
@@ -51,15 +51,15 @@ def PerezDriesseContinuous(DNI, DHI, solar_altitude, start_date=None, end_date=N
     def vectorized_spline_interp(zeta, t, coeff):
         indices = np.searchsorted(t, zeta, side='right') - 1
 
-        # 确保索引在有效范围内 [0, len(t)-3]
+        # insured the index is located valid range [0, len(t)-3]
         indices = np.clip(indices, 0, len(t) - 4)
 
-        # 计算每个zeta值相对于区间起点的偏移量
+        # Calculate the offset of each zeta value relative to the start of the interval
         offsets = zeta - t[indices]
 
         result = (coeff[indices] + coeff[indices + 1] * offsets + coeff[indices + 2] * offsets ** 2)
 
-        # 处理边界情况（zeta超出范围）
+        # Handle edge cases (zeta out of scope)
         out_of_range = (zeta < t[0]) | (zeta > t[-1])
         result[out_of_range] = 0.0
 
@@ -72,12 +72,13 @@ def PerezDriesseContinuous(DNI, DHI, solar_altitude, start_date=None, end_date=N
     F22 = vectorized_spline_interp(zeta, t, coeffs_dict['F22'])
     F23 = vectorized_spline_interp(zeta, t, coeffs_dict['F23'])
 
-    # 计算最终系数
+    # Calculate final coefficients
     F1 = F11 + delta * F12 + (pi / 2 - solar_altitude) * F13
     F2 = F21 + delta * F22 + (pi / 2 - solar_altitude) * F23
 
-    # 应用物理限制
+    # 应Apply physical constraints
     F1 = np.clip(F1, 0, 0.9)
 
 
     return F1, F2
+
