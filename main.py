@@ -17,7 +17,7 @@ h = 2.3
 n = 4
 N = 8
 
-Dm_data = pd.read_csv('data/Dm_fixed_cleaned.csv', index_col=0)
+Dm_data = pd.read_csv('data/example.csv', index_col=0)
 Dm_data.index = pd.to_datetime(Dm_data.index)
 
 DNI = Dm_data['DNI']
@@ -40,3 +40,4 @@ data = data = pd.DataFrame({'mea_front': mea_front,
                             'mea_rear': mea_rear,
                             'sim_rear': sim_r})
 data.to_csv('data/Dm_fixed_simulated.csv')
+
