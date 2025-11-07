@@ -1,3 +1,8 @@
+"""
+this code used to calculated the circumsolar and horizontal brightness coefficient, 
+from the article "A continuous form of the Perez diffusesky model for forward and reverse transposition
+"""
+
 import pandas as pd
 import numpy as np
 from math import pi
@@ -5,8 +10,6 @@ from math import pi
 
 def PerezDriesseContinuous(DNI, DHI, solar_altitude, start_date=None, end_date=None, time_step=None):
     """
-    Perez-Driesse Continuous model, from the article "A continuous form of the Perez diffuse
-    sky model for forward and reverse transposition"
     parameter:
     DNI: direct normal irradiance [W/m²]
     DHI: horizontal diffuse irradiance [W/m²]
@@ -26,10 +29,9 @@ def PerezDriesseContinuous(DNI, DHI, solar_altitude, start_date=None, end_date=N
     epsilon = (((DHI + DNI) / DHI + 1.041 * (pi / 2 - solar_altitude) ** 3) /
                (1 + 1.041 * (pi / 2 - solar_altitude) ** 3))
 
-    # 转换为zeta参数 (连续变换)
+    # convert zeta parameter (continunes convert)
     zeta = 1 - 1 / epsilon
 
-    # 样条节点和系数 (简化版本)
     t = np.array([0.000, 0.000, 0.000, 0.061, 0.187, 0.333, 0.487, 0.643, 0.778, 0.839, 1.000, 1.000, 1.000])
 
     # 样条系数
@@ -76,5 +78,6 @@ def PerezDriesseContinuous(DNI, DHI, solar_altitude, start_date=None, end_date=N
 
     # 应用物理限制
     F1 = np.clip(F1, 0, 0.9)
+
 
     return F1, F2
