@@ -52,18 +52,19 @@ def cal_array_angle(mode, beta, azimuth, D=None, A=None, solar_altitude=None, so
 
 def cal_irr_front(n, N, D, A, h, beta, azimuth, Albedo, DNI, DHI, solar_altitude, solar_azimuth):
     '''
-    :param n:光伏阵列第几行
-    :param N:光伏方阵的总行数
-    :param D:行间距
-    :param A:光伏阵列宽度
-    :param h:光伏阵列安装高度
-    :param beta:倾角
-    :param azimuth:方位角
-    :param Albedo:地面反照率
-    :param DNI:直接法向辐照
-    :param DHI:水平漫射辐照
-    :param F1:周太阳系数
-    :return:正面直接辐照、正面周太阳辐照、正面各向同性漫射辐照、正面反射辐照
+    :param n: Location of the simulated PV array
+    :param N: Total row numbers of the PV field
+    :param D: row spacing
+    :param A: vertical height of the PV array
+    :param h: installation of the PV field
+    :param beta: tilt angle
+    :param azimuth: azimuth angle
+    :param Albedo: ground albedo
+    :param DNI: direct normal irradiance
+    :param DHI: horizontal diffuse irradiance
+    :param F1: circumsolar coefficient
+    :return: direct irradiance, circumsolar diffuse irradiance, isotropic
+    diffuse irradiance and reflected irradiance of the front side
     '''
     if isinstance(beta, pd.Series):
         n = np.where(solar_azimuth < 0, n, N - n + 1)
@@ -97,7 +98,21 @@ def cal_irr_front(n, N, D, A, h, beta, azimuth, Albedo, DNI, DHI, solar_altitude
 
 
 def cal_irr_rear(n, N, D, A, h, beta, azimuth, Albedo, DNI, DHI, solar_altitude, solar_azimuth):
-
+    '''
+    :param n: Location of the simulated PV array
+    :param N: Total row numbers of the PV field
+    :param D: row spacing
+    :param A: vertical height of the PV array
+    :param h: installation of the PV field
+    :param beta: tilt angle
+    :param azimuth: azimuth angle
+    :param Albedo: ground albedo
+    :param DNI: direct normal irradiance
+    :param DHI: horizontal diffuse irradiance
+    :param F1: circumsolar coefficient
+    :return: direct irradiance, circumsolar diffuse irradiance, isotropic
+    diffuse irradiance and reflected irradiance of the rear side
+    '''
     if isinstance(beta, pd.Series):
         n = np.where(solar_azimuth < 0, n, N - n + 1)
         beta = beta.values
@@ -130,4 +145,5 @@ def cal_irr_rear(n, N, D, A, h, beta, azimuth, Albedo, DNI, DHI, solar_altitude,
     rear_ref = np.array(rear_ref_BEA + rear_ref_ISO)
 
     return rear_dir, rear_dif_BEA, rear_dif_ISO, rear_ref
+
 
