@@ -1,7 +1,7 @@
 """
-from the article
-Detailed mathematical simulation model of incident irradiance
-on photovoltaic arrays considering finite number of rows and array locations
+Author Zexing Deng
+time 2025-11-17
+This file is used to calculate various view factors involved in irradiance simulate.
 """
 
 import numpy as np
@@ -339,4 +339,5 @@ def cal_F_PV_nsgnd_rear(n, N, D, A, h, beta, azimuth_PV, solar_azimuth, solar_al
                                              np.logical_and(Sa < 0, le <= -(np.abs(Sa) + Sb + (N - n) * D))),
                                F_pv_rear_gnd,
                                F_pv_rear_f_nsgnd + F_pv_rear_m_nsgnd + F_pv_rear_r_nsgnd)
+
     return F_pv_rear_nsgnd
