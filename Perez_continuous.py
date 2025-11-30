@@ -28,10 +28,10 @@ def PerezDriesseContinuous(DNI, DHI, solar_altitude, start_date=None, end_date=N
     # 天顶角
     Z = (pi / 2 - solar_altitude)
 
-    # 地外辐照
+    # zenith angle
     I0 = 1353 * (1 + 0.033 * np.cos(np.radians(360 * (julian_days - 2) / 365)))
 
-    # 大气质量
+    # air mass
     am = (1.0 / (np.cos(Z) + 0.50572 * ((6.07995 + (90 - np.degrees(Z))) ** - 1.6364)))
     max_am = (1.0 / (np.cos(pi/2) + 0.50572 * (6.07995 ** - 1.6364)))
     am = np.where(Z >= pi/2, max_am, am)
@@ -61,7 +61,7 @@ def PerezDriesseContinuous(DNI, DHI, solar_altitude, start_date=None, end_date=N
     c23 = np.array([-0.019, -0.022, -0.032, -0.028, -0.012, -0.008,
                     0.047, 0.124, 0.292, 0.292, 0.000, 0.000, 0.000])
 
-    # --- 6. 真正的二次 B-spline ---
+    # ---B-spline ---
     k = 2
 
     spline_F11 = BSpline(t, c11, k, extrapolate=False)
@@ -72,7 +72,7 @@ def PerezDriesseContinuous(DNI, DHI, solar_altitude, start_date=None, end_date=N
     spline_F22 = BSpline(t, c22, k, extrapolate=False)
     spline_F23 = BSpline(t, c23, k, extrapolate=False)
 
-    # zeta 限制在 0~1 避免越界
+    # zeta Limit to 0~1 to avoid crossing the boundary
     zeta_clamp = np.clip(zeta, 0.0, 1.0)
 
     F11 = spline_F11(zeta_clamp)
@@ -86,9 +86,10 @@ def PerezDriesseContinuous(DNI, DHI, solar_altitude, start_date=None, end_date=N
     F1 = F11 + delta * F12 + Z * F13
     F2 = F21 + delta * F22 + Z * F23
 
-    # F1 物理限制
+    # F1 physical limitations
     F1 = np.clip(F1, 0, 0.9)
 
     return F1, F2
+
 
 
