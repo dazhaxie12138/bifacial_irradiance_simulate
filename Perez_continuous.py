@@ -6,6 +6,7 @@ from the article "A continuous form of the Perez diffusesky model for forward an
 import pandas as pd
 import numpy as np
 from math import pi
+from scipy.interpolate import BSpline
 
 
 def PerezDriesseContinuous(DNI, DHI, solar_altitude, start_date=None, end_date=None, time_step=None):
@@ -89,4 +90,5 @@ def PerezDriesseContinuous(DNI, DHI, solar_altitude, start_date=None, end_date=N
     F1 = np.clip(F1, 0, 0.9)
 
     return F1, F2
+
 
