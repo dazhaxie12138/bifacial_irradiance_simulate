@@ -24,61 +24,69 @@ def PerezDriesseContinuous(DNI, DHI, solar_altitude, start_date=None, end_date=N
         time_series = pd.date_range(start=start_date, end=end_date, freq=f'{time_step}min').to_series()
         julian_days = time_series.dt.dayofyear[:-1]
 
-    I0 = 1353 * (1 + 0.033 * np.cos(np.radians(360 * (julian_days - 2) / 365)))
-    delta = DHI / (I0 * np.sin(solar_altitude))
-    epsilon = (((DHI + DNI) / DHI + 1.041 * (pi / 2 - solar_altitude) ** 3) /
-               (1 + 1.041 * (pi / 2 - solar_altitude) ** 3))
+    # 天顶角
+    Z = (pi / 2 - solar_altitude)
 
-    # convert zeta parameter (continunes convert)
+    # 地外辐照
+    I0 = 1353 * (1 + 0.033 * np.cos(np.radians(360 * (julian_days - 2) / 365)))
+
+    # 大气质量
+    am = (1.0 / (np.cos(Z) + 0.50572 * ((6.07995 + (90 - np.degrees(Z))) ** - 1.6364)))
+    max_am = (1.0 / (np.cos(pi/2) + 0.50572 * (6.07995 ** - 1.6364)))
+    am = np.where(Z >= pi/2, max_am, am)
+
+    # delta and epsilon
+    delta = DHI / (I0 / am)
+    epsilon = (((DHI + DNI) / DHI + 1.041 * Z ** 3) / (1 + 1.041 * Z ** 3))
+
+    # --- 4. zeta ---
     zeta = 1 - 1 / epsilon
 
-    t = np.array([0.000, 0.000, 0.000, 0.061, 0.187, 0.333, 0.487, 0.643, 0.778, 0.839, 1.000, 1.000, 1.000])
+    # parameter from Table 2
+    t = np.array([0.000, 0.000, 0.000, 0.061, 0.187, 0.333,
+                  0.487, 0.643, 0.778, 0.839, 1.000, 1.000, 1.000])
 
-    # spline coefficient
-    coeffs_dict = {'F11': np.array([-0.053, -0.008, 0.131, 0.328, 0.557, 0.861,
-                                    1.212, 1.099, 0.544, 0.544, 0.000, 0.000, 0.000]),
-                   'F12': np.array([0.529, 0.588, 0.770, 0.471, 0.241, -0.323,
-                                    -1.239, -1.847, 0.157, 0.157, 0.000, 0.000, 0.000]),
-                   'F13': np.array([-0.028, -0.062, -0.167, -0.216, -0.300, -0.355,
-                                    -0.444, -0.365, -0.213, -0.213, 0.000, 0.000, 0.000]),
-                   'F21': np.array([-0.071, -0.060, -0.026, 0.069, 0.086, 0.240,
-                                    0.305, 0.275, 0.118, 0.118, 0.000, 0.000, 0.000]),
-                   'F22': np.array([0.061, 0.072, 0.106, -0.105, -0.085, -0.467,
-                                    -0.797, -1.132, -1.455, -1.455, 0.000, 0.000, 0.000]),
-                   'F23': np.array([-0.019, -0.022, -0.032, -0.028, -0.012, -0.008,
-                                    0.047, 0.124, 0.292, 0.292, 0.000, 0.000, 0.000])}
+    c11 = np.array([-0.053, -0.008, 0.131, 0.328, 0.557, 0.861,
+                    1.212, 1.099, 0.544, 0.544, 0.000, 0.000, 0.000])
+    c12 = np.array([0.529, 0.588, 0.770, 0.471, 0.241, -0.323,
+                    -1.239, -1.847, 0.157, 0.157, 0.000, 0.000, 0.000])
+    c13 = np.array([-0.028, -0.062, -0.167, -0.216, -0.300, -0.355,
+                    -0.444, -0.365, -0.213, -0.213, 0.000, 0.000, 0.000])
 
-    def vectorized_spline_interp(zeta, t, coeff):
-        indices = np.searchsorted(t, zeta, side='right') - 1
+    c21 = np.array([-0.071, -0.060, -0.026, 0.069, 0.086, 0.240,
+                    0.305, 0.275, 0.118, 0.118, 0.000, 0.000, 0.000])
+    c22 = np.array([0.061, 0.072, 0.106, -0.105, -0.085, -0.467,
+                    -0.797, -1.132, -1.455, -1.455, 0.000, 0.000, 0.000])
+    c23 = np.array([-0.019, -0.022, -0.032, -0.028, -0.012, -0.008,
+                    0.047, 0.124, 0.292, 0.292, 0.000, 0.000, 0.000])
 
-        # insured the index is located valid range [0, len(t)-3]
-        indices = np.clip(indices, 0, len(t) - 4)
+    # --- 6. 真正的二次 B-spline ---
+    k = 2
 
-        # Calculate the offset of each zeta value relative to the start of the interval
-        offsets = zeta - t[indices]
+    spline_F11 = BSpline(t, c11, k, extrapolate=False)
+    spline_F12 = BSpline(t, c12, k, extrapolate=False)
+    spline_F13 = BSpline(t, c13, k, extrapolate=False)
 
-        result = (coeff[indices] + coeff[indices + 1] * offsets + coeff[indices + 2] * offsets ** 2)
+    spline_F21 = BSpline(t, c21, k, extrapolate=False)
+    spline_F22 = BSpline(t, c22, k, extrapolate=False)
+    spline_F23 = BSpline(t, c23, k, extrapolate=False)
 
-        # Handle edge cases (zeta out of scope)
-        out_of_range = (zeta < t[0]) | (zeta > t[-1])
-        result[out_of_range] = 0.0
+    # zeta 限制在 0~1 避免越界
+    zeta_clamp = np.clip(zeta, 0.0, 1.0)
 
-        return result
+    F11 = spline_F11(zeta_clamp)
+    F12 = spline_F12(zeta_clamp)
+    F13 = spline_F13(zeta_clamp)
 
-    F11 = vectorized_spline_interp(zeta, t, coeffs_dict['F11'])
-    F12 = vectorized_spline_interp(zeta, t, coeffs_dict['F12'])
-    F13 = vectorized_spline_interp(zeta, t, coeffs_dict['F13'])
-    F21 = vectorized_spline_interp(zeta, t, coeffs_dict['F21'])
-    F22 = vectorized_spline_interp(zeta, t, coeffs_dict['F22'])
-    F23 = vectorized_spline_interp(zeta, t, coeffs_dict['F23'])
+    F21 = spline_F21(zeta_clamp)
+    F22 = spline_F22(zeta_clamp)
+    F23 = spline_F23(zeta_clamp)
 
-    # Calculate final coefficients
-    F1 = F11 + delta * F12 + (pi / 2 - solar_altitude) * F13
-    F2 = F21 + delta * F22 + (pi / 2 - solar_altitude) * F23
+    F1 = F11 + delta * F12 + Z * F13
+    F2 = F21 + delta * F22 + Z * F23
 
-    # 应Apply physical constraints
+    # F1 物理限制
     F1 = np.clip(F1, 0, 0.9)
-
 
     return F1, F2
 
