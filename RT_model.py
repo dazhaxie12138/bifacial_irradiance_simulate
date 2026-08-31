@@ -1,3 +1,10 @@
+# The RT simulations were performed using bifacial_radiance v0.4.4 with RADIANCE 6.0a (2025-06-08; 6.0.78fec72ee8)
+
+import bifacial_radiance as br
+import os
+from math import degrees
+
+
 import bifacial_radiance as br
 import os
 from math import degrees
@@ -74,19 +81,15 @@ def cal_irradiance(n, N, D, h, beta, azimuth, Albedo, DNI, DHI, solar_altitude, 
     return front_irr, rear_irr
 
 
+if __name__ == "__main__":
+    # 测试程序
+    (V_length, H_length, V_num, xgap, ygap, zgap) = [1.674, 1.002, 2, 0.02, 0.145, 0.115]
+    (n, N, D, h, beta, azimuth, N_mod) = [4, 8, 7.6, 2.3, 25, 0, 11]
+    (Albedo, DNI, DHI, solar_altitude, solar_azimuth) = [0.206448, 33.1, 168.2, 40.50, 50]
+    (project_name, save_path, accuracy) = ['PV_test', 'test', 'high']
 
-
-'''
-(V_length, H_length, V_num, xgap, ygap, zgap) = [1.674, 1.002, 2, 0.02, 0.145, 0.115]
-(n, N, D, h, beta, azimuth, N_mod) = [4, 8, 7.6, 2.3, 25, 0, 11]
-(Albedo, DNI, DHI, F1, solar_altitude, solar_azimuth) = [0.206448, 33.1, 168.2, 0, 90-76.28881, 226.9347-180]
-(project_name, save_path, accuracy) = ['PV_test', 'test', 'high']
-
-front_irr, rear_irr = cal_irradiance(n, N, D, h, beta, azimuth, Albedo, DNI, DHI, solar_altitude, solar_azimuth,
-                   H_length, V_length, V_num,
-                   xgap, ygap, zgap, N_mod,
-                   project_name, save_path, accuracy='low')
-                   '''
-
-
-
+    front_irr, rear_irr = cal_irradiance(n, N, D, h, beta, azimuth, Albedo, DNI, DHI, solar_altitude, solar_azimuth,
+                       H_length, V_length, V_num,
+                       xgap, ygap, zgap, N_mod,
+                       project_name, save_path, accuracy='low')
+  
